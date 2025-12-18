@@ -1,84 +1,302 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 
-const slogans = [
-  "Turn chats into apps",
-  "Prompt. Ship. Repeat.",
-  "Build anything from a chat",
-  "Ideas → Apps, instantly",
-  "From zero to MVP in minutes",
-  "Your cofounder in the command line",
-  "Draft, iterate, deploy",
-  "Ship faster than you can type",
-  "Design in text, deliver in code",
-  "Dream it. Prompt it. Run it.",
-  "Chat-native app building",
-  "From prompt to product",
-  "One prompt, infinite apps",
-  "Stop scaffolding. Start shipping.",
-  "Prototype at the speed of thought",
-  "Make conversations executable"
-];
+const BOARD_WIDTH = 10;
+const BOARD_HEIGHT = 20;
+const CELL_SIZE = 30;
 
-export default function Landing() {
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [isVisible, setIsVisible] = useState(true);
+const SHAPES = {
+  I: [[1, 1, 1, 1]],
+  O: [[1, 1], [1, 1]],
+  T: [[0, 1, 0], [1, 1, 1]],
+  S: [[0, 1, 1], [1, 1, 0]],
+  Z: [[1, 1, 0], [0, 1, 1]],
+  J: [[1, 0, 0], [1, 1, 1]],
+  L: [[0, 0, 1], [1, 1, 1]]
+};
 
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setIsVisible(false);
-      setTimeout(() => {
-        setCurrentIndex((prev) => (prev + 1) % slogans.length);
-        setIsVisible(true);
-      }, 400);
-    }, 2800);
+const COLORS = {
+  I: '#00f0f0',
+  O: '#f0f000',
+  T: '#a000f0',
+  S: '#00f000',
+  Z: '#f00000',
+  J: '#0000f0',
+  L: '#f0a000'
+};
 
-    return () => clearInterval(interval);
+type ShapeType = keyof typeof SHAPES;
+
+interface Piece {
+  shape: number[][];
+  x: number;
+  y: number;
+  type: ShapeType;
+}
+
+export default function TetrisGame() {
+  const [board, setBoard] = useState<(ShapeType | null)[][]>(
+    Array(BOARD_HEIGHT).fill(null).map(() => Array(BOARD_WIDTH).fill(null))
+  );
+  const [currentPiece, setCurrentPiece] = useState<Piece | null>(null);
+  const [score, setScore] = useState(0);
+  const [gameOver, setGameOver] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
+
+  const createNewPiece = useCallback((): Piece => {
+    const types = Object.keys(SHAPES) as ShapeType[];
+    const type = types[Math.floor(Math.random() * types.length)];
+    return {
+      shape: SHAPES[type],
+      x: Math.floor(BOARD_WIDTH / 2) - Math.floor(SHAPES[type][0].length / 2),
+      y: 0,
+      type
+    };
   }, []);
 
+  const checkCollision = useCallback((piece: Piece, offsetX = 0, offsetY = 0): boolean => {
+    for (let y = 0; y < piece.shape.length; y++) {
+      for (let x = 0; x < piece.shape[y].length; x++) {
+        if (piece.shape[y][x]) {
+          const newX = piece.x + x + offsetX;
+          const newY = piece.y + y + offsetY;
+          
+          if (newX < 0 || newX >= BOARD_WIDTH || newY >= BOARD_HEIGHT) {
+            return true;
+          }
+          
+          if (newY >= 0 && board[newY][newX]) {
+            return true;
+          }
+        }
+      }
+    }
+    return false;
+  }, [board]);
+
+  const mergePiece = useCallback(() => {
+    if (!currentPiece) return;
+    
+    const newBoard = board.map(row => [...row]);
+    for (let y = 0; y < currentPiece.shape.length; y++) {
+      for (let x = 0; x < currentPiece.shape[y].length; x++) {
+        if (currentPiece.shape[y][x]) {
+          const boardY = currentPiece.y + y;
+          const boardX = currentPiece.x + x;
+          if (boardY >= 0) {
+            newBoard[boardY][boardX] = currentPiece.type;
+          }
+        }
+      }
+    }
+    
+    // Clear completed lines
+    let linesCleared = 0;
+    for (let y = BOARD_HEIGHT - 1; y >= 0; y--) {
+      if (newBoard[y].every(cell => cell !== null)) {
+        newBoard.splice(y, 1);
+        newBoard.unshift(Array(BOARD_WIDTH).fill(null));
+        linesCleared++;
+        y++;
+      }
+    }
+    
+    if (linesCleared > 0) {
+      setScore(prev => prev + linesCleared * 100);
+    }
+    
+    setBoard(newBoard);
+    
+    const newPiece = createNewPiece();
+    if (checkCollision(newPiece)) {
+      setGameOver(true);
+    } else {
+      setCurrentPiece(newPiece);
+    }
+  }, [currentPiece, board, createNewPiece, checkCollision]);
+
+  const movePiece = useCallback((dx: number, dy: number) => {
+    if (!currentPiece || gameOver || isPaused) return;
+    
+    if (!checkCollision(currentPiece, dx, dy)) {
+      setCurrentPiece({
+        ...currentPiece,
+        x: currentPiece.x + dx,
+        y: currentPiece.y + dy
+      });
+    } else if (dy > 0) {
+      mergePiece();
+    }
+  }, [currentPiece, gameOver, isPaused, checkCollision, mergePiece]);
+
+  const rotatePiece = useCallback(() => {
+    if (!currentPiece || gameOver || isPaused) return;
+    
+    const rotated = currentPiece.shape[0].map((_, i) =>
+      currentPiece.shape.map(row => row[i]).reverse()
+    );
+    
+    const rotatedPiece = { ...currentPiece, shape: rotated };
+    
+    if (!checkCollision(rotatedPiece)) {
+      setCurrentPiece(rotatedPiece);
+    }
+  }, [currentPiece, gameOver, isPaused, checkCollision]);
+
+  const dropPiece = useCallback(() => {
+    if (!currentPiece || gameOver || isPaused) return;
+    
+    let newY = currentPiece.y;
+    while (!checkCollision(currentPiece, 0, newY - currentPiece.y + 1)) {
+      newY++;
+    }
+    
+    setCurrentPiece({ ...currentPiece, y: newY });
+    setTimeout(mergePiece, 50);
+  }, [currentPiece, gameOver, isPaused, checkCollision, mergePiece]);
+
+  useEffect(() => {
+    if (!currentPiece && !gameOver) {
+      setCurrentPiece(createNewPiece());
+    }
+  }, [currentPiece, gameOver, createNewPiece]);
+
+  useEffect(() => {
+    if (gameOver || isPaused) return;
+    
+    const interval = setInterval(() => {
+      movePiece(0, 1);
+    }, 500);
+    
+    return () => clearInterval(interval);
+  }, [movePiece, gameOver, isPaused]);
+
+  useEffect(() => {
+    const handleKeyPress = (e: KeyboardEvent) => {
+      if (gameOver) return;
+      
+      switch (e.key) {
+        case 'ArrowLeft':
+          movePiece(-1, 0);
+          break;
+        case 'ArrowRight':
+          movePiece(1, 0);
+          break;
+        case 'ArrowDown':
+          movePiece(0, 1);
+          break;
+        case 'ArrowUp':
+          rotatePiece();
+          break;
+        case ' ':
+          dropPiece();
+          break;
+        case 'p':
+        case 'P':
+          setIsPaused(prev => !prev);
+          break;
+      }
+    };
+    
+    window.addEventListener('keydown', handleKeyPress);
+    return () => window.removeEventListener('keydown', handleKeyPress);
+  }, [movePiece, rotatePiece, dropPiece, gameOver]);
+
+  const resetGame = () => {
+    setBoard(Array(BOARD_HEIGHT).fill(null).map(() => Array(BOARD_WIDTH).fill(null)));
+    setCurrentPiece(null);
+    setScore(0);
+    setGameOver(false);
+    setIsPaused(false);
+  };
+
+  const renderBoard = () => {
+    const displayBoard = board.map(row => [...row]);
+    
+    if (currentPiece) {
+      for (let y = 0; y < currentPiece.shape.length; y++) {
+        for (let x = 0; x < currentPiece.shape[y].length; x++) {
+          if (currentPiece.shape[y][x]) {
+            const boardY = currentPiece.y + y;
+            const boardX = currentPiece.x + x;
+            if (boardY >= 0 && boardY < BOARD_HEIGHT && boardX >= 0 && boardX < BOARD_WIDTH) {
+              displayBoard[boardY][boardX] = currentPiece.type;
+            }
+          }
+        }
+      }
+    }
+    
+    return displayBoard;
+  };
+
   return (
-    <div className="relative h-[100dvh] w-full overflow-hidden bg-black text-white">
-      {/* Enhanced animated aurora background layers */}
-      <div className="absolute inset-0 bg-aurora-layer-1" />
-      <div className="absolute inset-0 bg-aurora-layer-2" />
-      <div className="absolute inset-0 bg-aurora-layer-3" />
-      
-      {/* Floating particles overlay */}
-      <div className="absolute inset-0 bg-particles" />
-      
-      {/* Main content - centered */}
-      <main className="relative z-10 h-full flex flex-col items-center justify-center px-6">
-        <h1 className="text-center text-[clamp(28px,6vw,64px)] font-medium tracking-tight mb-4">
-          Turn Chats into Apps
-        </h1>
+    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-black flex items-center justify-center p-4">
+      <div className="text-center">
+        <h1 className="text-5xl font-bold text-white mb-8">TETRIS</h1>
         
-        {/* Rotating slogans */}
-        <div className="mt-4 h-8 md:h-10 overflow-hidden flex items-center justify-center">
-          <span
-            className={`inline-block text-center text-[clamp(18px,3vw,32px)] font-light transition-all duration-[400ms] ease-in-out ${
-              isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-2'
-            }`}
-          >
-            {slogans[currentIndex]}
-          </span>
-        </div>
-      </main>
-      
-      {/* Start Prompting arrow pointing left - bottom left */}
-      <div className="absolute left-6 md:left-8 bottom-[5%] z-20 flex items-center gap-3 arrow-point-left">
-        <div className="flex items-center gap-2 text-white/80 font-medium text-sm md:text-base">
-          <svg 
-            className="w-5 h-5 md:w-6 md:h-6 animate-bounce-horizontal" 
-            fill="none" 
-            viewBox="0 0 24 24" 
-            stroke="currentColor"
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-          </svg>
-          <span>Start prompting</span>
+        <div className="flex gap-8 items-start justify-center flex-wrap">
+          <div className="bg-black/50 p-4 rounded-lg backdrop-blur">
+            <div 
+              className="grid gap-[1px] bg-gray-800 p-1 rounded"
+              style={{
+                gridTemplateColumns: `repeat(${BOARD_WIDTH}, ${CELL_SIZE}px)`,
+                gridTemplateRows: `repeat(${BOARD_HEIGHT}, ${CELL_SIZE}px)`
+              }}
+            >
+              {renderBoard().map((row, y) =>
+                row.map((cell, x) => (
+                  <div
+                    key={`${y}-${x}`}
+                    className="border border-gray-700"
+                    style={{
+                      width: CELL_SIZE,
+                      height: CELL_SIZE,
+                      backgroundColor: cell ? COLORS[cell] : '#1a1a2e'
+                    }}
+                  />
+                ))
+              )}
+            </div>
+          </div>
+          
+          <div className="text-white space-y-6">
+            <div className="bg-black/50 p-6 rounded-lg backdrop-blur min-w-[200px]">
+              <h2 className="text-2xl font-bold mb-2">Score</h2>
+              <p className="text-4xl font-bold text-yellow-400">{score}</p>
+            </div>
+            
+            <div className="bg-black/50 p-6 rounded-lg backdrop-blur text-left text-sm">
+              <h3 className="font-bold mb-3 text-lg">Controls</h3>
+              <div className="space-y-2">
+                <p>← → Move</p>
+                <p>↑ Rotate</p>
+                <p>↓ Soft Drop</p>
+                <p>Space Hard Drop</p>
+                <p>P Pause</p>
+              </div>
+            </div>
+            
+            {(gameOver || isPaused) && (
+              <div className="bg-black/50 p-6 rounded-lg backdrop-blur">
+                <h2 className="text-2xl font-bold mb-4 text-red-400">
+                  {gameOver ? 'Game Over!' : 'Paused'}
+                </h2>
+                {gameOver && (
+                  <button
+                    onClick={resetGame}
+                    className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg transition"
+                  >
+                    Play Again
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>
   );
 }
+
