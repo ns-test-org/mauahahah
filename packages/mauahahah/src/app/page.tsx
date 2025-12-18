@@ -232,14 +232,21 @@ export default function TetrisGame() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-black flex items-center justify-center p-4">
-      <div className="text-center">
-        <h1 className="text-5xl font-bold text-white mb-8">TETRIS</h1>
+    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-black flex items-center justify-center p-4 relative overflow-hidden">
+      {/* Animated background elements */}
+      <div className="absolute inset-0 overflow-hidden">
+        <div className="absolute w-96 h-96 bg-purple-500/20 rounded-full blur-3xl animate-pulse top-0 left-0 -translate-x-1/2 -translate-y-1/2"></div>
+        <div className="absolute w-96 h-96 bg-blue-500/20 rounded-full blur-3xl animate-pulse bottom-0 right-0 translate-x-1/2 translate-y-1/2" style={{animationDelay: '2s'}}></div>
+        <div className="absolute w-64 h-64 bg-indigo-500/20 rounded-full blur-3xl animate-pulse top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" style={{animationDelay: '4s'}}></div>
+      </div>
+      
+      <div className="text-center relative z-10">
+        <h1 className="text-5xl font-bold text-white mb-8 drop-shadow-2xl">TETRIS</h1>
         
         <div className="flex gap-8 items-start justify-center flex-wrap">
-          <div className="bg-black/50 p-4 rounded-lg backdrop-blur">
+          <div className="bg-black/50 p-4 rounded-lg backdrop-blur shadow-2xl">
             <div 
-              className="grid gap-[1px] bg-gray-800 p-1 rounded"
+              className="grid gap-[1px] bg-gray-800 p-1 rounded shadow-[0_0_50px_rgba(139,92,246,0.5)]"
               style={{
                 gridTemplateColumns: `repeat(${BOARD_WIDTH}, ${CELL_SIZE}px)`,
                 gridTemplateRows: `repeat(${BOARD_HEIGHT}, ${CELL_SIZE}px)`
@@ -262,12 +269,12 @@ export default function TetrisGame() {
           </div>
           
           <div className="text-white space-y-6">
-            <div className="bg-black/50 p-6 rounded-lg backdrop-blur min-w-[200px]">
+            <div className="bg-black/50 p-6 rounded-lg backdrop-blur min-w-[200px] shadow-xl">
               <h2 className="text-2xl font-bold mb-2">Score</h2>
               <p className="text-4xl font-bold text-yellow-400">{score}</p>
             </div>
             
-            <div className="bg-black/50 p-6 rounded-lg backdrop-blur text-left text-sm">
+            <div className="bg-black/50 p-6 rounded-lg backdrop-blur text-left text-sm shadow-xl">
               <h3 className="font-bold mb-3 text-lg">Controls</h3>
               <div className="space-y-2">
                 <p>← → Move</p>
@@ -279,7 +286,7 @@ export default function TetrisGame() {
             </div>
             
             {(gameOver || isPaused) && (
-              <div className="bg-black/50 p-6 rounded-lg backdrop-blur">
+              <div className="bg-black/50 p-6 rounded-lg backdrop-blur shadow-xl">
                 <h2 className="text-2xl font-bold mb-4 text-red-400">
                   {gameOver ? 'Game Over!' : 'Paused'}
                 </h2>
@@ -299,4 +306,8 @@ export default function TetrisGame() {
     </div>
   );
 }
+
+
+
+
 
