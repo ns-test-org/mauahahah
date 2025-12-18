@@ -235,18 +235,20 @@ export default function TetrisGame() {
     <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-black flex items-center justify-center p-4 relative overflow-hidden">
       {/* Animated background elements */}
       <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute w-96 h-96 bg-purple-500/20 rounded-full blur-3xl animate-pulse top-0 left-0 -translate-x-1/2 -translate-y-1/2"></div>
-        <div className="absolute w-96 h-96 bg-blue-500/20 rounded-full blur-3xl animate-pulse bottom-0 right-0 translate-x-1/2 translate-y-1/2" style={{animationDelay: '2s'}}></div>
-        <div className="absolute w-64 h-64 bg-indigo-500/20 rounded-full blur-3xl animate-pulse top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" style={{animationDelay: '4s'}}></div>
+        <div className="absolute w-[500px] h-[500px] bg-purple-500/30 rounded-full blur-3xl animate-pulse top-0 left-0 -translate-x-1/2 -translate-y-1/2"></div>
+        <div className="absolute w-[500px] h-[500px] bg-blue-500/30 rounded-full blur-3xl animate-pulse bottom-0 right-0 translate-x-1/2 translate-y-1/2" style={{animationDelay: '2s'}}></div>
+        <div className="absolute w-[400px] h-[400px] bg-indigo-500/30 rounded-full blur-3xl animate-pulse top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" style={{animationDelay: '4s'}}></div>
+        <div className="absolute w-[300px] h-[300px] bg-pink-500/20 rounded-full blur-3xl animate-pulse top-1/4 right-1/4" style={{animationDelay: '1s'}}></div>
+        <div className="absolute w-[350px] h-[350px] bg-cyan-500/20 rounded-full blur-3xl animate-pulse bottom-1/4 left-1/4" style={{animationDelay: '3s'}}></div>
       </div>
       
       <div className="text-center relative z-10">
         <h1 className="text-5xl font-bold text-white mb-8 drop-shadow-2xl">TETRIS</h1>
         
         <div className="flex gap-8 items-start justify-center flex-wrap">
-          <div className="bg-black/50 p-4 rounded-lg backdrop-blur shadow-2xl">
+          <div className="bg-black/60 p-6 rounded-xl backdrop-blur-md shadow-[0_20px_60px_rgba(0,0,0,0.8),0_0_80px_rgba(139,92,246,0.4)]">
             <div 
-              className="grid gap-[1px] bg-gray-800 p-1 rounded shadow-[0_0_50px_rgba(139,92,246,0.5)]"
+              className="grid gap-[1px] bg-gray-800 p-1 rounded-lg shadow-[0_0_60px_rgba(139,92,246,0.6),inset_0_0_30px_rgba(0,0,0,0.5)]"
               style={{
                 gridTemplateColumns: `repeat(${BOARD_WIDTH}, ${CELL_SIZE}px)`,
                 gridTemplateRows: `repeat(${BOARD_HEIGHT}, ${CELL_SIZE}px)`
@@ -269,12 +271,12 @@ export default function TetrisGame() {
           </div>
           
           <div className="text-white space-y-6">
-            <div className="bg-black/50 p-6 rounded-lg backdrop-blur min-w-[200px] shadow-xl">
+            <div className="bg-black/60 p-6 rounded-xl backdrop-blur-md min-w-[200px] shadow-[0_10px_40px_rgba(0,0,0,0.6)]">
               <h2 className="text-2xl font-bold mb-2">Score</h2>
-              <p className="text-4xl font-bold text-yellow-400">{score}</p>
+              <p className="text-4xl font-bold text-yellow-400 drop-shadow-[0_0_10px_rgba(250,204,21,0.8)]">{score}</p>
             </div>
             
-            <div className="bg-black/50 p-6 rounded-lg backdrop-blur text-left text-sm shadow-xl">
+            <div className="bg-black/60 p-6 rounded-xl backdrop-blur-md text-left text-sm shadow-[0_10px_40px_rgba(0,0,0,0.6)]">
               <h3 className="font-bold mb-3 text-lg">Controls</h3>
               <div className="space-y-2">
                 <p>← → Move</p>
@@ -286,14 +288,14 @@ export default function TetrisGame() {
             </div>
             
             {(gameOver || isPaused) && (
-              <div className="bg-black/50 p-6 rounded-lg backdrop-blur shadow-xl">
-                <h2 className="text-2xl font-bold mb-4 text-red-400">
+              <div className="bg-black/60 p-6 rounded-xl backdrop-blur-md shadow-[0_10px_40px_rgba(0,0,0,0.6)]">
+                <h2 className="text-2xl font-bold mb-4 text-red-400 drop-shadow-[0_0_10px_rgba(248,113,113,0.8)]">
                   {gameOver ? 'Game Over!' : 'Paused'}
                 </h2>
                 {gameOver && (
                   <button
                     onClick={resetGame}
-                    className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg transition"
+                    className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg transition shadow-[0_5px_20px_rgba(37,99,235,0.5)] hover:shadow-[0_5px_30px_rgba(37,99,235,0.7)]"
                   >
                     Play Again
                   </button>
@@ -306,6 +308,10 @@ export default function TetrisGame() {
     </div>
   );
 }
+
+
+
+
 
 
 
